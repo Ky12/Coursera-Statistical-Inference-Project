@@ -1,0 +1,117 @@
+---
+title: "Tooth Growth Basic Inferential Data Analysis"
+author: "Kaushal Yadav"
+date: "13 December 2018"
+output: html_document
+---
+
+##Overview
+The purpose of the this data analysis is to analyze the ToothGrowth data set by
+comparing the guinea tooth growth by supplement and dose. First, I will do
+exploratory data analysis on the data set. Then I will do the comparison with
+confidence intervals in order to make conclusions about the tooth growth.
+
+##Instruction
+Analyze the ToothGrowth data in the R datasets package. Tasks
+
+1- Load the ToothGrowth data and perform some basic exploratory data analyses
+2- Provide a basic summary of the data.
+3- Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose.
+4- State your conclusions and the assumptions needed for your conclusions.
+
+##Set-Up
+Load required packages.
+Load required data: Dataset - The Effect of Vitamin C on Tooth Growth in Guinea Pigs.
+```{r}
+ECHO=TRUE
+library(ggplot2)
+library(datasets)
+data("ToothGrowth")
+```
+
+###Exploring the Data
+Description The response is the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).
+```{r}
+str(ToothGrowth)
+head(ToothGrowth)
+```
+The data format can be improved on - and especially this will help us with the plotting: The dose variable has three levels. Therefore it makes more sense to re-format it to a factor, than keep in nummerical.
+So let’s do that, summarize the data and make a quick plot (please note that the x-axis is now not gradually increasing, but is showing the three levels)
+```{r}
+ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+summary(ToothGrowth)
+```
+
+```{r}
+qplot(dose ,len ,data = ToothGrowth, 
+      col = supp, 
+      main = "Tooth growth of guinea pigs by supplement type and dosage (mg)", 
+      xlab = "Dosage (mg)", 
+      ylab = "Tooth length")
+```
+To see the difference better, let’s put the same data in a box-plot-style graph. (remark: to have the facets, it was a good idea to re-format the dose variable)
+```{r}
+qplot(supp, len, data = ToothGrowth, 
+      facets = ~dose, 
+      main = "Tooth growth of guinea pigs by supplement type and dosage (mg)", 
+      xlab = "Supplement type", 
+      ylab = "Tooth length") + 
+        geom_boxplot(aes(fill = supp))
+```
+1. we see that the OJ generally is doing better in each dosage compared to VC
+2. increasing the dosage (from 0.5, to 1, to 2) increased the length of the tooth, for both supplement types.
+
+####Comparing tooth growth by supp and dose
+##Hypothesis 1
+Let H0: No difference in tooth growth given OJ or VC
+Ha: tooth growth is bigger when using OJ, than VC.
+```{r}
+VC.length <- ToothGrowth$len[ToothGrowth$supp == "VC"]
+OJ.length <- ToothGrowth$len[ToothGrowth$supp == "OJ"]
+```
+####Student's t-Test
+```{r}
+t.test(OJ.length, VC.length, 
+       alternative = "greater",
+       paired = FALSE,
+       var.equal = FALSE,
+       conf.level = 0.95)
+```
+The p-values of this comparison is p = 3%, lower than 5%. We reject the null hypothesis.
+So we conclude that the alternative hypothesis is true: OJ has a greater impact on tooth growth than VC.
+
+##Hypothesis 2
+Let H0: No difference in growth given different doses
+Ha:Different growth given different doses
+```{r}
+dose_0.5 <- ToothGrowth$len[ToothGrowth$dose == "0.5"]
+dose_1   <- ToothGrowth$len[ToothGrowth$dose == "1"]
+dose_2   <- ToothGrowth$len[ToothGrowth$dose == "2"]
+```
+Step 1: perform a t-test between dose_0.5 and dose_1
+```{r}
+t.test(dose_0.5, dose_1, 
+       alternative = "less",
+       paired = FALSE,
+       var.equal = FALSE,
+       conf.level = 0.95)
+```
+The p-value is very small (6.342e-8), therefore we can conclude that the null hypothesis can be rejected looking at dose_0.5 and dose_1.
+
+Step 2: perform a t-test between dose_1 and dose_2:
+```{r}
+t.test(dose_1, dose_2, 
+       alternative = "less",
+       paired = FALSE,
+       var.equal = FALSE,
+       conf.level = 0.95)
+```
+Here too, the p-value is very small, therefore we can safely reject the null hypothesis.
+We can conclude that the higher the dosage gets, the bigger the tooth growth gets. Hence, we reject the null Hypothesis and accept the alternative hypothesis.
+
+####Conclusion
+We can summarize that
+- there is (at least) a 95% confidence that by increasing the dosage from 0.5 to 1mg and from 1 to 2mg, increases the tooth length.
+- there is (at least) a 95% confidence that giving the supplement OJ (Orange Juice) increases the tooth length more significant than giving VC (Vitamin C)
+
+
